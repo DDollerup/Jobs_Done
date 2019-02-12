@@ -1,0 +1,100 @@
+﻿@model List<Case>
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+<a href="#" class="btn btn-primary" id="AddCase">Add Case</a>
+<hr />
+<table class="table table-striped">
+    <tr>
+        <th>
+            Title
+        </th>
+        <th>
+            Start Date
+        </th>
+        <th>
+            End Date
+        </th>
+        <th>
+            Actions
+        </th>
+    </tr>
+    @foreach (Case item in Model)
+    {
+        <tr id="caseData_@item.ID">
+            <td>
+                @item.Title
+            </td>
+            <td>
+                @item.StartDate.ToShortDateString()
+            </td>
+            <td>
+                @(item.EndDate != DateTime.MinValue ? item.EndDate.ToShortDateString() : "Not Finished")
+            </td>
+            <td>
+                <a href="/Home/ShowCase/@item.ID">See More</a>
+                <a href="#" class="editCase">Edit</a>
+                <a href="#" class="deleteCase" data-caseid="@item.ID">Delete</a>
+            </td>
+        </tr>
+        <tr style="display:none;" id="caseInput_@item.ID">
+            <form action="/Home/EditCase" method="post" enctype="multipart/form-data">
+                <td>
+                    <input type="hidden" name="ID" value="@item.ID" />
+                    <input type="hidden" name="Email" value="@item.Email" />
+                    <input type="hidden" name="Phone" value="@item.Phone" />
+                    <input type="hidden" name="Remarks" value="@item.Remarks" />
+                    <input type="text" name="Title" value="@item.Title" class="form-control" />
+                </td>
+                <td><input type="date" name="StartDate" value="@item.StartDate.ToString("yyyy-MM-dd")" class="form-control" /></td>
+                <td><input type="date" name="EndDate" value="@(item.EndDate != DateTime.MinValue ? item.EndDate.ToString("yyyy-MM-dd") : "")" class="form-control" /></td>
+                <td><input type="submit" value="Save Changes" class="btn btn-primary" /></td>
+            </form>
+        </tr>
+    }
+</table>
+
+@section JS
+{
+    <script>
+        $("#AddCase").click(function () {
+            $.getJSON('@Url.Action("AddCase","Home")', function (data) {
+                $("#modalTarget").html(data.html);
+                $(".modal").modal("show");
+            })
+        });
+
+        $(".editCase").click(function () {
+            var caseID = $(this).closest("tr").attr("id").replace("caseData_", "");
+
+            $(this).closest("tr").hide("fast", function () {
+                $("#caseInput_" + caseID).show("fast");
+            });
+        });
+
+        $(".deleteCase").click(function () {
+            var caseID = $(this).data("caseid");
+            bootbox.confirm({
+                message: "Are you sure you wish to delete this case",
+                buttons: {
+                    confirm: {
+                        label: "Yes",
+                        className: "btn-success"
+                    },
+                    cancel: {
+                        label: "No",
+                        className: "btn-danger"
+                    }
+                },
+                callback: function (result) /*result er en bool, altså true eller false*/ {
+                    if (result == true) {
+                        window.location = "/Home/DeleteCase/" + caseID;
+                    }
+                }
+            });
+        });
+    </script>
+}
+

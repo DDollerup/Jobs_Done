@@ -1,0 +1,152 @@
+﻿@model CaseVM
+@{
+    /**/
+
+    ViewBag.Title = "Show Case: " + Model.Case.Title;
+}
+
+<h2>Show Case: @Model.Case.Title</h2>
+<a href="#" class="btn btn-primary" id="AddTask">Add Task</a>
+<hr />
+
+<table class="table table-bordered">
+    <tr>
+        <td>Title</td>
+        <td>@Model.Case.Title</td>
+    </tr>
+    <tr>
+        <td>Start Date</td>
+        <td>@Model.Case.StartDate</td>
+    </tr>
+    <tr>
+        <td>End Date</td>
+        <td>@(Model.Case.EndDate != DateTime.MinValue ? Model.Case.EndDate.ToShortDateString() : "Not Finished")</td>
+    </tr>
+    <tr>
+        <td>Email</td>
+        <td>@Model.Case.Email</td>
+    </tr>
+    <tr>
+        <td>Phone</td>
+        <td>@Model.Case.Phone</td>
+    </tr>
+    <tr>
+        <td>Remarks</td>
+        <td>@Model.Case.Remarks</td>
+    </tr>
+</table>
+
+<hr />
+
+<table class="table table-bordered">
+    <tr>
+        <th>
+            Title
+        </th>
+        <th>
+            Description
+        </th>
+        <th>
+            Price
+        </th>
+        <th>
+            Actions
+        </th>
+    </tr>
+    @foreach (TaskVM item in Model.Tasks)
+    {
+        <tr id="relationData_@item.Relation.ID">
+            <td>@item.Task.Title</td>
+            <td>@item.Relation.Description</td>
+            <td>@item.Relation.Price</td>
+            <td>
+                <a href="#" class="editRelation">Edit</a>
+                <a href="#" class="deleteRelation" data-relationid="@item.Relation.ID">Delete</a>
+            </td>
+        </tr>
+        <tr style="display:none;" id="relationInput_@item.Relation.ID">
+            <form action="/Home/EditRelation" method="post" enctype="multipart/form-data" id="relationForm_@item.Relation.ID">
+                <td>
+                    <input type="hidden" name="ID" value="@item.Relation.ID" />
+                    <input type="hidden" name="CaseID" value="@Model.Case.ID" />
+                    <select name="TaskID" class="form-control">
+                        <option value="">Pick Task</option>
+                        @foreach (Task task in ViewBag.Tasks)
+                        {
+                            if (task.ID == item.Task.ID)
+                            {
+                                <option value="@task.ID" selected>@task.Title</option>
+                            }
+                            else
+                            {
+                                <option value="@task.ID">@task.Title</option>
+                            }
+                        }
+                    </select>
+                </td>
+                <td><input type="text" name="Description" value="@item.Relation.Description" class="form-control" /></td>
+                <td><input type="text" name="Price" lang="en" value="@item.Relation.Price" class="form-control" /></td>
+                <td><input type="submit" value="Save Changes" class="btn btn-primary" /></td>
+            </form>
+        </tr>
+    }
+    <tr>
+        <td></td>
+        <td></td>
+        <td><strong>Total Price</strong></td>
+        <td><strong>@Model.TotalPrice</strong></td>
+    </tr>
+</table>
+
+@section JS
+{
+    <script>
+        $("#AddTask").click(function () {
+            $.getJSON('@Url.Action("AddTask","Home")/@Model.Case.ID', function (data) {
+                $("#modalTarget").html(data.html);
+                $(".modal").modal("show");
+            });
+        });
+
+        $(".editRelation").click(function () {
+            var parentTr = $(this).closest("tr");
+            var relationID = $(parentTr).attr("id").replace("relationData_", "");
+
+            $(parentTr).hide("fast", function () {
+                $("#relationInput_" + relationID).show("fast");
+            });
+        });
+
+        $(".deleteRelation").click(function () {
+            var relationID = $(this).data("relationid");
+            bootbox.confirm({
+                message: "Are you sure you wish to delete this task",
+                buttons: {
+                    confirm: {
+                        label: "Yes",
+                        className: "btn-success"
+                    },
+                    cancel: {
+                        label: "No",
+                        className: "btn-danger"
+                    }
+                },
+                callback: function (result) /*result er en bool, altså true eller false*/ {
+                    if (result == true) {
+                        window.location = "/Home/DeleteRelation/" + relationID;
+                    }
+                }
+            });
+        });
+
+        //$(".relationSubmitButton").click(function () {
+        //    var price = $(this).closest("tr").find("input[name=Price]");
+        //    var value = price.val();
+        //    value = value.replace(".", ",");
+        //    price.val(value);
+
+        //    var relationID = $(this).closest("tr").attr("id").replace("relationInput_", "");
+        //    $("#relationForm_" + relationID).submit();
+        //});
+    </script>
+}
